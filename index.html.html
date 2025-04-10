@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <style>
+        :root {
+            --bg-color: #0c0c0c;
+            --text-color: #5aff5a;
+            --accent-color: #ff00ff;
+            --secondary-color: #222222;
+            --terminal-font: 'Courier New', monospace;
+            --warning-color: #ff5f5f;
+            --success-color: #5fff5f;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--terminal-font);
+            padding: 0;
+            margin: 0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            grid-template-rows: 60px 1fr;
+            grid-template-areas: 
+                "header header"
+                "sidebar main";
+            height: 100vh;
+        }
+        
+        .header {
+            grid-area: header;
+            background-color: var(--secondary-color);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--accent-color);
+        }
+        
+        .sidebar {
+            grid-area: sidebar;
+            background-color: var(--secondary-color);
+            padding: 20px 0;
+            border-right: 1px solid var(--accent-color);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main {
+            grid-area: main;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .logo {
+            color: var(--accent-color);
+            font-weight: bold;
+            font-size: 20px;
+        }
+        
+        .menu-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+        
+        .menu-item:hover, .menu-item.active {
+            background-color: rgba(255, 0, 255, 0.2);
+            border-left: 3px solid var(--accent-color);
+        }
+        
+        .panel {
+            display: none;
+        }
+        
+        .panel.active {
+            display: block;
+        }
+        
+        .panel-header {
+            color: var(--accent-color);
+            border-bottom: 1px dashed var(--accent-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .order-card {
+            background-color: var(--secondary-color);
+            border: 1px solid var(--accent-color);
+            padding: 15px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed var(--accent-color);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .order-id {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .order-status {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .status-pending {
+            background-color: #5f5fff;
+            color: white;
+        }
+        
+        .status-confirmed {
+            background-color: var(--success-color);
+            color: black;
+        }
+        
+        .status-delivered {
+            background-color: #ffbe5f;
+            color: black;
+        }
+        
+        .status-cancelled {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .order-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .order-detail {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .order-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .button {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            border: 1px solid var(--accent-color);
+            padding: 8px 12px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: var(--terminal-font);
+            font-size: 14px;
+        }
+        
+        .button:hover {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            box-shadow: 0 0 10px var(--accent-color);
+        }
+        
+        .button-success {
+            border-color: var(--success-color);
+        }
+        
+        .button-success:hover {
+            background-color: var(--success-color);
+            box-shadow: 0 0 10px var(--success-color);
+        }
+        
+        .button-warning {
+            border-color: var(--warning-color);
+        }
+        
+        .button-warning:hover {
+            background-color: var(--warning-color);
+            box-shadow: 0 0 10px var(--warning-color);
+        }
+        
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background-color: var(--secondary-color);
+            border: 1px solid var(--accent-color);
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            color: var(--accent-color);
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #999;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .form-control {
+            background-color: var(--secondary-color);
+            border: 1px solid var(--accent-color);
+            color: var(--text-color);
+            padding: 8px;
+            width: 100%;
+            font-family: var(--terminal-font);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            box-shadow: 0 0 5px var(--accent-color);
+        }
+        
+        .settings-card {
+            background-color: var(--secondary-color);
+            border: 1px solid var(--accent-color);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .settings-card h3 {
+            color: var(--accent-color);
+            margin-top: 0;
+            border-bottom: 1px dashed var(--accent-color);
+            padding-bottom: 10px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--success-color);
+            color: black;
+            padding: 10px 20px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .notification.show {
+            display: block;
+            animation: slideIn 0.3s, fadeOut 0.5s 2.5s;
+            animation-fill-mode: forwards;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        .search-container {
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            background-color: var(--secondary-color);
+            border: 1px solid var(--accent-color);
+            color: var(--text-color);
+            padding: 8px;
+            width: 300px;
+            font-family: var(--terminal-font);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 5px var(--accent-color);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 60px auto 1fr;
+                grid-template-areas: 
+                    "header"
+                    "sidebar"
+                    "main";
+            }
+            
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid var(--accent-color);
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .order-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="notification" id="notification">Operacja zakończona pomyślnie</div>
+    
+    <div class="container">
+        <header class="header">
+            <div class="logo">dropdead:~/admin$</div>
+            <div>
+                <span id="current-time">00:00:00</span> | 
+                <span>Operator: <span style="color: var(--accent-color);">admin</span></span>
+            </div>
+        </header>
+        
+        <aside class="sidebar">
+            <div class="menu-item active" data-panel="dashboard">Dashboard</div>
+            <div class="menu-item" data-panel="pending-orders">Oczekujące zamówienia</div>
+            <div class="menu-item" data-panel="all-orders">Wszystkie zamówienia</div>
+            <div class="menu-item" data-panel="inventory">Magazyn</div>
+            <div class="menu-item" data-panel="settings">Ustawienia bota</div>
+            <div class="menu-item" data-panel="logs">Logi systemowe</div>
+        </aside>
+        
+        <main class="main">
+            <!-- Dashboard -->
+            <div class="panel active" id="dashboard">
+                <div class="panel-header">
+                    <h2>Dashboard</h2>
+                    <span>Ostatnia aktualizacja: <span id="last-update">10-04-2025 14:32</span></span>
+                </div>
+                
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Nowe zamówienia</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">35</div>
+                        <div class="stat-label">Zrealizowane dziś</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">1890zł</div>
+                        <div class="stat-label">Dzisiejszy obrót</div>
+                    </div>
+                </div>
+                
+                <div class="panel-header">
+                    <h3>Ostatnie zamówienia</h3>
+                    <button class="button" onclick="showNotification('Odświeżono ostatnie zamówienia')">Odśwież</button>
+                </div>
+                
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-id">#WAR0410A7F</div>
+                        <div class="order-status status-pending">OCZEKUJE</div>
+                    </div>
+                    <div class="order-details">
+                        <div class="order-detail">
+                            <span class="detail-label">Miasto</span>
+                            <span>Warszawa (Mokotow)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Produkt</span>
+                            <span>Kamyk x5 (x1)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Kwota</span>
+                            <span>220 PLN / 55 USDT</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Płatność</span>
+                            <span>BLIK</span>
+                        </div>
+                    </div>
+                    <div class="order-actions">
+                        <button class="button button-success" onclick="showNotification('Potwierdzono płatność WAR0410A7F')">Potwierdź płatność</button>
+                        <button class="button" onclick="showNotification('Skontaktowano z klientem')">
+            </div>
+            
+            <!-- Pending Orders -->
+            <div class="panel" id="pending-orders">
+                <div class="panel-header">
+                    <h2>Oczekujące zamówienia</h2>
+                    <button class="button" onclick="showNotification('Odświeżono listę zamówień')">Odśwież</button>
+                </div>
+                
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="Szukaj po ID, mieście, produktach...">
+                </div>
+                
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-id">#WAR0410A7F</div>
+                        <div class="order-status status-pending">OCZEKUJE</div>
+                    </div>
+                    <div class="order-details">
+                        <div class="order-detail">
+                            <span class="detail-label">Miasto</span>
+                            <span>Warszawa (Mokotow)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Produkt</span>
+                            <span>Kamyk x5 (x1)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Kwota</span>
+                            <span>220 PLN / 55 USDT</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Płatność</span>
+                            <span>BLIK</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Lokalizacja</span>
+                            <span>ul. Puławska 28</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Czas zamówienia</span>
+                            <span>10-04-2025 14:25</span>
+                        </div>
+                    </div>
+                    <div class="order-actions">
+                        <button class="button button-success" onclick="showNotification('Potwierdzono płatność WAR0410A7F')">Potwierdź płatność</button>
+                        <button class="button" onclick="showNotification('Skontaktowano z klientem')">Kontakt</button>
+                        <button class="button button-warning" onclick="showNotification('Anulowano zamówienie WAR0410A7F')">Anuluj</button>
+                    </div>
+                </div>
+                
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-id">#POZ0410C3E</div>
+                        <div class="order-status status-pending">OCZEKUJE</div>
+                    </div>
+                    <div class="order-details">
+                        <div class="order-detail">
+                            <span class="detail-label">Miasto</span>
+                            <span>Poznań (Jeżyce)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Produkt</span>
+                            <span>Sk00n (silverHaze) x5 (x1)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Kwota</span>
+                            <span>270 PLN / 67.5 USDT</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Płatność</span>
+                            <span>XRP</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Lokalizacja</span>
+                            <span>Park Sołacki</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Czas zamówienia</span>
+                            <span>10-04-2025 14:10</span>
+                        </div>
+                    </div>
+                    <div class="order-actions">
+                        <button class="button button-success" onclick="showNotification('Potwierdzono płatność POZ0410C3E')">Potwierdź płatność</button>
+                        <button class="button" onclick="showNotification('Skontaktowano z klientem')">Kontakt</button>
+                        <button class="button button-warning" onclick="showNotification('Anulowano zamówienie POZ0410C3E')">Anuluj</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- All Orders -->
+            <div class="panel" id="all-orders">
+                <div class="panel-header">
+                    <h2>Wszystkie zamówienia</h2>
+                    <button class="button" onclick="showNotification('Odświeżono listę zamówień')">Odśwież</button>
+                </div>
+                
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="Szukaj po ID, mieście, produktach...">
+                </div>
+                
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-id">#WAR0410A7F</div>
+                        <div class="order-status status-pending">OCZEKUJE</div>
+                    </div>
+                    <div class="order-details">
+                        <div class="order-detail">
+                            <span class="detail-label">Miasto</span>
+                            <span>Warszawa (Mokotow)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Produkt</span>
+                            <span>Kamyk x5 (x1)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Kwota</span>
+                            <span>220 PLN / 55 USDT</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Płatność</span>
+                            <span>BLIK</span>
+                        </div>
+                    </div>
+                    <div class="order-actions">
+                        <button class="button" onclick="showNotification('Wyświetlono szczegóły zamówienia')">Szczegóły</button>
+                        <button class="button button-warning" onclick="showNotification('Anulowano zamówienie WAR0410A7F')">Anuluj</button>
+                    </div>
+                </div>
+                
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-id">#KRA0410B2D</div>
+                        <div class="order-status status-confirmed">POTWIERDZONE</div>
+                    </div>
+                    <div class="order-details">
+                        <div class="order-detail">
+                            <span class="detail-label">Miasto</span>
+                            <span>Kraków (Kazimierz)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Produkt</span>
+                            <span>Kamyk euforia x5 (x2)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Kwota</span>
+                            <span>480 PLN / 120 USDT</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Płatność</span>
+                            <span>USDT (TRC20)</span>
+                        </div>
+                    </div>
+                    <div class="order-actions">
+                        <button class="button" onclick="showNotification('Wyświetlono szczegóły zamówienia')">Szczegóły</button>
+                        <button class="button button-success" onclick="showNotification('Oznaczono jako dostarczone')">Oznacz jako dostarczone</button>
+                    </div>
+                </div>
+                
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-id">#GDA0409F2A</div>
+                        <div class="order-status status-delivered">DOSTARCZONE</div>
+                    </div>
+                    <div class="order-details">
+                        <div class="order-detail">
+                            <span class="detail-label">Miasto</span>
+                            <span>Gdansk (Przymorze)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Produkt</span>
+                            <span>Punisher x5 (x2)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Kwota</span>
+                            <span>280 PLN / 70 USDT</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Płatność</span>
+                            <span>BLIK</span>
+                        </div>
+                    </div>
+                    <div class="order-actions">
+                        <button class="button" onclick="showNotification('Wyświetlono szczegóły zamówienia')">Szczegóły</button>
+                    </div>
+                </div>
+                
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-id">#LOD0409E5C</div>
+                        <div class="order-status status-cancelled">ANULOWANE</div>
+                    </div>
+                    <div class="order-details">
+                        <div class="order-detail">
+                            <span class="detail-label">Miasto</span>
+                            <span>Lodz (Retkinia)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Produkt</span>
+                            <span>Kokos 89% x1 (x1)</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Kwota</span>
+                            <span>400 PLN / 100 USDT</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="detail-label">Płatność</span>
+                            <span>Paysafe</span>
+                        </div>
+                    </div>
+                    <div class="order-actions">
+                        <button class="button" onclick="showNotification('Wyświetlono szczegóły zamówienia')">Szczegóły</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Inventory -->
+            <div class="panel" id="inventory">
+                <div class="panel-header">
+                    <h2>Magazyn</h2>
+                    <button class="button" onclick="showNotification('Zaktualizowano stan magazynowy')">Aktualizuj stany</button>
+                </div>
+                
+                <div class="settings-card">
+                    <h3>Kamyk x5</h3>
+                    <div class="form-group">
+                        <label>Dostępne sztuki</label>
+                        <input type="number" class="form-control" value="250">
+                    </div>
+                    <div class="form-group">
+                        <label>Cena PLN</label>
+                        <input type="number" class="form-control" value="220">
+                    </div>
+                    <div class="form-group">
+                        <label>Cena USDT</label>
+                        <input type="number" class="form-control" value="55">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control">
+                            <option>Dostępny</option>
+                            <option>Ograniczona dostępność</option>
+                            <option>Niedostępny</option>
+                        </select>
+                    </div>
+                    <button class="button" onclick="showNotification('Zapisano zmiany')">Zapisz zmiany</button>
+                </div>
+                
+                <div class="settings-card">
+                    <h3>Kamyk euforia x5</h3>
+                    <div class="form-group">
+                        <label>Dostępne sztuki</label>
+                        <input type="number" class="form-control" value="175">
+                    </div>
+                    <div class="form-group">
+                        <label>Cena PLN</label>
+                        <input type="number" class="form-control" value="240">
+                    </div>
+                    <div class="form-group">
+                        <label>Cena USDT</label>
+                        <input type="number" class="form-control" value="60">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control">
+                            <option>Dostępny</option>
+                            <option>Ograniczona dostępność</option>
+                            <option>Niedostępny</option>
+                        </select>
+                    </div>
+                    <button class="button" onclick="showNotification('Zapisano zmiany')">Zapisz zmiany</button>
+                </div>
+                
+                <div class="settings-card">
+                    <h3>Niebieskie Punisher x5</h3>
+                    <div class="form-group">
+                        <label>Dostępne sztuki</label>
+                        <input type="number" class="form-control" value="120">
+                    </div>
+                    <div class="form-group">
+                        <label>Cena PLN</label>
+                        <input type="number" class="form-control" value="140">
+                    </div>
+                    <div class="form-group">
+                        <label>Cena USDT</label>
+                        <input type="number" class="form-control" value="35">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control">
+                            <option>Dostępny</option>
+                            <option>Ograniczona dostępność</option>
+                            <option>Niedostępny</option>
+                        </select>
+                    </div>
+                    <button class="button" onclick="showNotification('Zapisano zmiany')">Zapisz zmiany</button>
+                </div>
+                
+                <div class="settings-card">
+                    <h3>Sk00n (silverHaze) x5</h3>
+                    <div class="form-group">
+                        <label>Dostępne sztuki</label>
+                        <input type="number" class="form-control" value="90">
+                    </div>
+                    <div class="form-group">
+                        <label>Cena PLN</label>
+                        <input type="number" class="form-control" value="270">
+                    </div>
+                    <div class="form-group">
+                        <label>Cena USDT</label>
+                        <input type="number" class="form-control" value="67.5">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control">
+                            <option>Dostępny</option>
+                            <option>Ograniczona dostępność</option>
+                            <option>Niedostępny</option>
+                        </select>
+                    </div>
+                    <button class="button" onclick="showNotification('Zapisano zmiany')">Zapisz zmiany</button>
+                </div>
+                
+                <div class="panel-header" style="margin-top: 30px;">
+                    <h3>Dodaj nowy produkt</h3>
+                </div>
+                
+                <div class="settings-card">
+                    <div class="form-group">
+                        <label>Nazwa produktu</label>
+                        <input type="text" class="form-control" placeholder="Nazwa produktu">
+                    </div>
+                    <div class="form-group">
+                        <label>Dostępne sztuki</label>
+                        <input type="number" class="form-control" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Minimalna ilość zamówienia</label>
+                        <input type="number" class="form-control" placeholder="5">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control">
+                            <option>Dostępny</option>
+                            <option>Ograniczona dostępność</option>
+                            <option>Niedostępny</option>
+                        </select>
+                    </div>
+                    <button class="button" onclick="showNotification('Dodano nowy produkt')">Dodaj produkt</button>
+                </div>
+            </div>
+            
+            <!-- Settings -->
+            <div class="panel" id="settings">
+                <div class="panel-header">
+                    <h2>Ustawienia bota</h2>
+                </div>
+                
+                <div class="settings-card">
+                    <h3>Ogólne ustawienia</h3>
+                    <div class="form-group">
+                        <label>Nazwa bota</label>
+                        <input type="text" class="form-control" value="DropDead Delivery">
+                    </div>
+                    <div class="form-group">
+                        <label>Token bota Telegram</label>
+                        <input type="text" class="form-control" value="8081387831:AAHR8-Upo-vKfNlISTyXAudKCmgPBEn8iaI">
+                    </div>
+                    <div class="form-group">
+                        <label>ID Operatora</label>
+                        <input type="text" class="form-control" value="5251423021">
+                    </div>
+                    <div class="form-group">
+                        <label>Login administratora</label>
+                        <input type="text" class="form-control" value="admin112">
+                    </div>
+                    <div class="form-group">
+                        <label>Hasło administratora</label>
+                        <input type="password" class="form-control" value="11223344">
+                    </div>
+                    <button class="button" onclick="showNotification('Zapisano ustawienia ogólne')">Zapisz</button>
+                </div>
+                
+                <div class="settings-card">
+                    <h3>Ustawienia miast</h3>
+                    <div class="form-group">
+                        <label>Aktywne miasta</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" checked> 
+                                <span>Szczecin</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" checked> 
+                                <span>Gdansk (3city)</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" checked> 
+                                <span>Poznan</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" checked> 
+                                <span>Krakow</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" checked> 
+                                <span>Warszawa</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" checked> 
+                                <span>Katowice</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" checked> 
+                                <span>Lodz</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="button" onclick="showNotification('Zapisano ustawienia miast')">Zapisz</button>
+                </div>
+                
+                <div class="settings-card">
+                    <h3>Ustawienia płatności</h3>
+                    <div class="form-group">
+                        <label>Aktywne metody płatności</label>
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" checked> 
+                                <span>USDT (TRC20)</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" checked> 
+                                <span>XRP</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" checked> 
+                                <span>BLIK</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" checked> 
+                                <span>Paysafe</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Adres portfela USDT (TRC20)</label>
+                        <input type="text" class="form-control" value="TQTEcWKJRq3KPqYEma1t6hJJWoXLAMev39">
+                    </div>
+                    <div class="form-group">
+                        <label>Adres portfela XRP</label>
+                        <input type="text" class="form-control" value="rwB34te2pPziaF3TGsR3Zb3ZkU3hyjNuRx">
+                    </div>
+                    <button class="button" onclick="showNotification('Zapisano ustawienia płatności')">Zapisz</button>
+                </div>
+                
+                <div class="settings-card">
+                    <h3>Komunikaty bota</h3>
+                    <div class="form-group">
+                        <label>Wiadomość powitalna</label>
+                        <textarea class="form-control" rows="3">🔥 Witamy w DropDead – najbardziej dyskretnym i bezpiecznym systemie zamówień lokalnych dropów. Nasz bot działa 24/7 i obsługuje największe miasta w Polsce.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Komunikat /pomoc</label>
+                        <textarea class="form-control" rows="3">🛠️ Dostępne komendy:
+
+🔹 /zamowienie - Złóż nowe zamówienie
+🔹 /status - Sprawdź status swojego zamówienia
+🔹 /opinie - Zobacz opinie klientów
+🔹 /sorty - Przeglądaj dostępne produkty
+🔹 /cennik - Lista produktów i cen
+🔹 /anuluj - Anuluj aktualne zamówienie</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Komunikat o gratisach</label>
+                        <textarea class="form-control" rows="3">📊 Co mówią nasi klienci:
+
+⭐⭐⭐⭐⭐ Michal
+"Mega szybka dostawa, wszystko dyskretnie. Polecam!"</textarea>
+                    </div>
+                    <button class="button" onclick="showNotification('Zapisano komunikaty bota')">Zapisz</button>
+                </div>
+            </div>
+            
+            <!-- Logs -->
+            <div class="panel" id="logs">
+                <div class="panel-header">
+                    <h2>Logi systemowe</h2>
+                    <button class="button" onclick="showNotification('Odświeżono logi systemowe')">Odśwież</button>
+                </div>
+                
+                <div style="background-color: var(--secondary-color); padding: 15px; font-family: monospace; height: 500px; overflow-y: auto; border: 1px solid var(--accent-color);">
+                    <div>[10-04-2025 14:32:15] INFO: DropDead Delivery Bot - Controller initialized</div>
+                    <div>[10-04-2025 14:32:20] INFO: Connected to Telegram API</div>
+                    <div>[10-04-2025 14:35:42] INFO: New order received: #WAR0410A7F</div>
+                    <div>[10-04-2025 14:36:10] INFO: Payment pending for order #WAR0410A7F</div>
+                    <div>[10-04-2025 14:38:25] INFO: New order received: #POZ0410C3E</div>
+                    <div>[10-04-2025 14:40:18] INFO: Payment received for order #KRA0410B2D via USDT</div>
+                    <div>[10-04-2025 14:40:19] INFO: Order #KRA0410B2D status changed to CONFIRMED</div>
+                    <div>[10-04-2025 14:42:55] INFO: User chat.id=123456789 started conversation</div>
+                    <div>[10-04-2025 14:43:10] INFO: User chat.id=123456789 selected city: Warszawa</div>
+                    <div>[10-04-2025 14:43:23] INFO: User chat.id=123456789 selected district: Mokotow</div>
+                    <div>[10-04-2025 14:43:35] INFO: User chat.id=123456789 abandoned order process</div>
+                    <div>[10-04-2025 14:45:18] INFO: Payment pending for order #POZ0410C3E</div>
+                    <div>[10-04-2025 14:48:02] INFO: User chat.id=987654321 started conversation</div>
+                    <div>[10-04-2025 14:48:15] INFO: User chat.id=987654321 executed /sorty command</div>
+                    <div>[10-04-2025 14:48:30] INFO: User chat.id=987654321 browsing products</div>
+                    <div>[10-04-2025 14:49:02] INFO: User chat.id=987654321 executed /cennik command</div>
+                    <div>[10-04-2025 14:49:45] INFO: Operator contacted customer for order #WAR0410A7F</div>
+                    <div>[10-04-2025 14:50:12] INFO: User chat.id=987654321 executed /zamowienie command</div>
+                    <div>[10-04-2025 14:50:40] INFO: User chat.id=987654321 selected city: Gdansk</div>
+                    <div>[10-04-2025 14:51:15] INFO: User chat.id=987654321 selected district: Przymorze</div>
+                    <div>[10-04-2025 14:51:30] INFO: User chat.id=987654321 selected product: punisher</div>
+                    <div>[10-04-2025 14:51:31] INFO: New order received: #GDA0410D8F</div>
+                    <div>[10-04-2025 14:52:17] INFO: Order #GDA0409F2A feedback received: "Wszystko git!"</div>
+                    <div>[10-04-2025 14:55:10] INFO: Admin user.id=5251423021 logged in</div>
+                    <div>[10-04-2025 14:56:30] INFO: Admin executed /zamowienia command</div>
+                    <div>[10-04-2025 14:57:15] INFO: Admin executed /system command</div>
+                    <div>[10-04-2025 14:58:42] INFO: Payment code received: BLIK 123456</div>
+                    <div>[10-04-2025 15:00:30] INFO: Admin executed /zaakceptuj_WAR0410A7F command</div>
+                    <div>[10-04-2025 15:00:31] INFO: Order #WAR0410A7F status changed to CONFIRMED</div>
+                    <div>[10-04-2025 15:01:15] INFO: Order notification sent to customer id=123456789</div>
+                    <div>[10-04-2025 15:02:20] INFO: Admin executed /metrics command</div>
+                    <div>[10-04-2025 15:03:45] INFO: System maintenance mode disabled</div>
+                    <div>[10-04-2025 15:05:10] INFO: New user chat.id=555666777 connected</div>
+                    <div>[10-04-2025 15:05:30] INFO: User chat.id=555666777 executed /opinie command</div>
+                </div>>[10-04-2025 14:48:02] INFO: User chat.id=987654321 started conversation</div>
+                    <div>[10-04-2025 14:48:15] INFO: User chat.id=987654321 selected city: Szczecin</div>
+                    <div>[10-04-2025 14:48:16] INFO: User chat.id=987654321 received city unavailable message</div>
+                    <div>[10-04-2025 14:48:30] INFO: User chat.id=987654321 selected city: Gdańsk</div>
+                    <div>[10-04-2025 14:49:02] INFO: User chat.id=987654321 selected products: Boost</div>
+                    <div>[10-04-2025 14:49:45] INFO: Operator contacted customer for order #WAW0410A7F</div>
+                    <div>[10-04-2025 14:50:12] INFO: User chat.id=987654321 specified quantity: 8</div>
+                    <div>[10-04-2025 14:50:40] INFO: User chat.id=987654321 selected delivery: Dead Drop</div>
+                    <div>[10-04-2025 14:51:15] INFO: User chat.id=987654321 provided location: ul. Morska 42</div>
+                    <div>[10-04-2025 14:51:30] INFO: User chat.id=987654321 selected payment: Blik</div>
+                    <div>[10-04-2025 14:51:31] INFO: New order received: #GDA0410D8F</div>
+                    <div>[10-04-2025 14:52:17] INFO: Order #GDA0409F2A feedback received: "Wszystko git!"</div>
+                </div>
+            </div>
+            
